@@ -3,6 +3,17 @@ import torch.nn.functional as F
 from einops import rearrange
 from torch import nn
 
+# Loss Function
+
+class loss_fn(nn.Module):
+    def __init__(self):
+        super().__init__()
+
+    def forward(self, x_inp, x_labels):
+        x_inp, x_labels = x_inp[:, :-1], x_labels[:, 1:]
+        loss = F.cross_entropy(rearrange(x_inp, "b c n -> b n c"), x_labels)
+        return loss
+
 # helper function
 
 
@@ -78,6 +89,5 @@ class AutoregressiveWrapper(nn.Module):
         return out
 
     def forward(self, x, **kwargs):
-        x_inp, x_labels = x[:, :-1], x[:, 1:]
-        logits = self.net(x_inp, **kwargs)
-        return F.cross_entropy(rearrange(logits, "b c n -> b n c"), x_labels)
+        logits = self.net(x, **kwargs)
+        return logits

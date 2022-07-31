@@ -7,6 +7,7 @@ from math import log2, floor
 def exists(val):
     return val is not None
 
+
 # normalization
 
 class RMSNorm(nn.Module):
@@ -20,10 +21,11 @@ class RMSNorm(nn.Module):
         norm = torch.norm(x, dim = -1, keepdim = True) * self.scale
         return x / norm.clamp(min = self.eps) * self.g
 
+
 # AliBi
 
 class AlibiPositionalBias(nn.Module):
-    def __init__(self, heads, **kwargs):
+    def __init__(self, heads):
         super().__init__()
         self.heads = heads
         slopes = torch.Tensor(self._get_slopes(heads))
@@ -61,9 +63,10 @@ class AlibiPositionalBias(nn.Module):
 
         num_heads_unalibied = h - bias.shape[0]
         bias = F.pad(bias, (0, 0, 0, 0, 0, num_heads_unalibied))
-        self.register_buffer('bias', bias, persistent=False)
+        self.register_buffer('bias', bias, persistent = False)
 
         return bias
+
 
 # residual
 
@@ -79,7 +82,6 @@ class Residual(nn.Module):
 # classic Noam Shazeer paper, except here they use SwiGLU instead of the more popular GEGLU for gating the feedforward
 # https://arxiv.org/abs/2002.05202
 
-
 class SwiGLU(nn.Module):
     def forward(self, x):
         x, gate = x.chunk(2, dim=-1)
@@ -88,7 +90,6 @@ class SwiGLU(nn.Module):
 
 # parallel attention and feedforward with residual
 # discovered by Wang et al + EleutherAI from GPT-J fame
-
 
 class ParallelTransformerBlock(nn.Module):
     def __init__(self, dim, dim_head=64, heads=8, ff_mult=4):
@@ -178,6 +179,7 @@ class ParallelTransformerBlock(nn.Module):
 
         merge_heads = self.attn_out(out) + self.ff_out(ff)
         return merge_heads
+
 
 def PaLM(*, dim, num_tokens, depth, dim_head=64, heads=8, ff_mult=4):
 
