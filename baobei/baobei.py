@@ -79,13 +79,13 @@ class Residual(nn.Module):
         return self.fn(x) + x
 
 
-# classic Noam Shazeer paper, except here they use SwiGLU instead of the more popular GEGLU for gating the feedforward
+# classic Noam Shazeer paper, use GEGLU for gating the feedforward
 # https://arxiv.org/abs/2002.05202
 
-class SwiGLU(nn.Module):
+class GEGLU(nn.Module):
     def forward(self, x):
-        x, gate = x.chunk(2, dim=-1)
-        return F.silu(gate) * x
+        x, gate = x.chunk(2, dim = -1)
+        return x * F.gelu(gate)
 
 
 # parallel attention and feedforward with residual
@@ -109,7 +109,7 @@ class ParallelTransformerBlock(nn.Module):
         self.attn_out = nn.Linear(attn_inner_dim, dim, bias=False)
 
         self.ff_out = nn.Sequential(
-            SwiGLU(),
+            GEGLU(),
             nn.Linear(ff_inner_dim, dim, bias=False)
         )
 
@@ -202,11 +202,11 @@ def PaLM(*, dim, num_tokens, depth, dim_head=64, heads=8, ff_mult=4):
 if __name__ == "__main__":
 
     palm = PaLM(
-        num_tokens = 20000,
+        num_tokens = 100000,
         dim = 512,
-        depth = 1,
-        heads = 8,
-        dim_head = 64,
+        depth = 4,
+        heads = 2,
+        dim_head = 256,
     )
 
     tokens = torch.randint(0, 20000, (1, 2048))
