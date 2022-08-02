@@ -1,5 +1,6 @@
 import torch
 import torch.nn.functional as F
+import colossalai
 from einops import rearrange
 from torch import einsum, nn
 from math import log2, floor
@@ -105,12 +106,12 @@ class ParallelTransformerBlock(nn.Module):
 
         self.alibi_pos_biases = AlibiPositionalBias(heads = self.heads)
 
-        self.fused_attn_ff_proj = nn.Linear(dim, sum(self.fused_dims), bias=False)
-        self.attn_out = nn.Linear(attn_inner_dim, dim, bias=False)
+        self.fused_attn_ff_proj = colossalai.nn.Linear(dim, sum(self.fused_dims), bias=False)
+        self.attn_out = colossalai.nn.Linear(attn_inner_dim, dim, bias=False)
 
         self.ff_out = nn.Sequential(
             GEGLU(),
-            nn.Linear(ff_inner_dim, dim, bias=False)
+            colossalai.nn.Linear(ff_inner_dim, dim, bias=False)
         )
 
         # for caching causal mask
@@ -184,10 +185,10 @@ class ParallelTransformerBlock(nn.Module):
 def PaLM(*, dim, num_tokens, depth, dim_head=64, heads=8, ff_mult=4):
 
     net = nn.Sequential(
-        nn.Embedding(num_tokens, dim),
+        colossalai.nn.Embedding(num_tokens, dim),
         *[Residual(ParallelTransformerBlock(dim, dim_head, heads, ff_mult)) for _ in range(depth)],
         RMSNorm(dim),
-        nn.Linear(dim, num_tokens, bias=False)
+        colossalai.nn.Linear(dim, num_tokens, bias=False)
     )
 
     # they used embedding weight tied projection out to logits, not common, but works
@@ -207,9 +208,9 @@ if __name__ == "__main__":
         depth = 4,
         heads = 2,
         dim_head = 256,
-    )
+    ).cuda()
 
-    tokens = torch.randint(0, 20000, (1, 2048))
+    tokens = torch.randint(0, 20000, (1, 2048)).cuda()
     logits = palm(tokens) # (1, 2048, 20000)
 
     n_params_torch = sum(
