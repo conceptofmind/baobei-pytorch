@@ -5,6 +5,8 @@ from einops import rearrange
 from torch import einsum, nn
 from math import log2, floor
 
+from colossalai.core import global_context as gpc
+
 def exists(val):
     return val is not None
 
@@ -182,7 +184,7 @@ class ParallelTransformerBlock(nn.Module):
         return merge_heads
 
 
-def PaLM(*, dim, num_tokens, depth, dim_head=64, heads=8, ff_mult=4):
+def baobei(*, dim, num_tokens, depth, dim_head=64, heads=8, ff_mult=4):
 
     net = nn.Sequential(
         colossalai.nn.Embedding(num_tokens, dim),
@@ -198,11 +200,21 @@ def PaLM(*, dim, num_tokens, depth, dim_head=64, heads=8, ff_mult=4):
     nn.init.normal_(net[0].weight, std=0.02)
     return net
 
+def baobei_model():
+    model = baobei(
+        num_tokens = gpc.config.num_tokens,
+        dim = gpc.config.dim,
+        depth = gpc.config.depth,
+        dim_head = gpc.config.dim_head,
+        heads = gpc.config.heads
+    )
+    return model
+
 # For testing functionality of the model
 
 if __name__ == "__main__":
 
-    palm = PaLM(
+    palm = baobei(
         num_tokens = 100000,
         dim = 512,
         depth = 4,

@@ -3,17 +3,6 @@ import torch.nn.functional as F
 from einops import rearrange
 from torch import nn
 
-# Loss Function
-
-class loss_fn(nn.Module):
-    def __init__(self):
-        super().__init__()
-
-    def forward(self, x_inp, x_labels):
-        x_inp, x_labels = x_inp[:, :-1], x_labels[:, 1:]
-        loss = F.cross_entropy(rearrange(x_inp, "b c n -> b n c"), x_labels)
-        return loss
-
 # helper function
 
 
