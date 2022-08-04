@@ -35,8 +35,8 @@ def Trainer():
     args = parser.parse_args()
 
     colossalai.launch_from_torch(
-        config='',
-        seed=0
+        config = '',
+        seed = gpc.config.seed
     )
 
     # Colossal logger

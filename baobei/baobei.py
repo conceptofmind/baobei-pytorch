@@ -5,6 +5,8 @@ from einops import rearrange
 from torch import einsum, nn
 from math import log2, floor
 
+import bitsandbytes as bnb
+
 from colossalai.core import global_context as gpc
 
 def exists(val):
@@ -187,7 +189,7 @@ class ParallelTransformerBlock(nn.Module):
 def baobei(*, dim, num_tokens, depth, dim_head=64, heads=8, ff_mult=4):
 
     net = nn.Sequential(
-        colossalai.nn.Embedding(num_tokens, dim),
+        bnb.nn.StableEmbedding(num_tokens, dim),
         *[Residual(ParallelTransformerBlock(dim, dim_head, heads, ff_mult)) for _ in range(depth)],
         RMSNorm(dim),
         colossalai.nn.Linear(dim, num_tokens, bias=False)
